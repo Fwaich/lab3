@@ -7,9 +7,9 @@ const char* types[] = {"панельный", "кирпичный", "моноли
 
 typedef struct{
 
-    char developer[50];
-    char neighborhood[50];
-    char type[50];
+    char* developer;
+    char* neighborhood;
+    char* type;
     int year;
     int has_lift;
     int has_trash;
@@ -42,7 +42,19 @@ void add_element(vector* v, building el){
 void clear_vector(vector* v) {
     free(v->data);
     v->data = NULL;
-    v->size = v->capacity = 0;
+    v->size = 0;
+    v->capacity = 0;
+}
+
+int cmp(vector* v, int ind1, int ind2){
+    int n = 0;
+    if (v->data[ind1].year > v->data[ind2].year){
+        n = 1;
+    } else if (v->data[ind1].year < v->data[ind2].year) {
+        n = -1;
+    }
+
+    return n;
 }
 
 void swap_elements(vector* v, int ind1, int ind2) {
@@ -61,8 +73,21 @@ void buble_sort(vector* v) {
     }
 }
 
+int rand_int(int bot, int top) {
+    return bot + rand() % (top - bot + 1);
+}
+
+float rand_float(float bot, float top) {
+    return bot + (float)rand() / RAND_MAX * (top - bot + 1);
+}
+
 int main(){
-    printf("hi!\n");
+    // printf("hi!\n");
+    for (int i = 0; i < 100; i++) {
+        float num = rand_float(10, 50);
+        printf("%f\n", num);
+    }
+    
 
     return 0;
 }
