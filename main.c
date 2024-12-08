@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <ctype.h>
+#include <string.h>
 
 const char* developers[] = {"Skyline", "Horizon", "Pinnacle", "Nova", "Evergreen"};
 const char* neighborhoods[] = {"Maplewood", "Cedar", "Bluewater", "Golden", "Silverstone"};
@@ -9,9 +10,9 @@ const char* types[] = {"Monolithic", "Brick", "Panel", "Frame", "Stone"};
 
 typedef struct{
 
-    const char* developer;
-    const char* neighborhood;
-    const char* type;
+    char* developer;
+    char* neighborhood;
+    char* type;
     int year;
     short has_lift;
     short has_trash;
@@ -48,7 +49,7 @@ void clear_vector(vector* v) {
     v->capacity = 0;
 }
 
-int compare_string(const char* st1, const char* st2) {
+int compare_string(char* st1, char* st2) {
     if (st1 == st2){
         return 0;
     }
@@ -142,9 +143,9 @@ float rand_float(float bot, float top) {
     return bot + (float)rand() / RAND_MAX * (top - bot + 1);
 }
 
-const char* rand_string(const char* arr[], int len) { //важно после arr чтоб было []
+char* rand_string(const char* arr[], int len) { //важно после arr чтоб было []
     int i = rand_int(0, len - 1);
-    return arr[i];
+    return strdup(arr[i]);
 }
 
 void generate_building(building* b) {
@@ -167,18 +168,78 @@ char* convert_bin(short h) {
     }
 }
 
-void print_building(building b) {
-    printf("%s, %s, %s, %d, %s, %s, %d, %d, %.3f\n", 
-    b.developer,
-    b.neighborhood,
-    b.type,
-    b.year,
-    convert_bin(b.has_lift),
-    convert_bin(b.has_trash),
-    b.apartaments_count,
-    b.floors_count,
-    b.avg_area
-    );
+void print_building(vector v) {
+    printf("Developer,Neighborhood,Type,Year,Lift,Trash,Apartments,Floors,Avg_area\n");
+    for (int i = 0; i < v.size; i++){
+        printf("%s, %s, %s, %d, %s, %s, %d, %d, %.2f\n", 
+        v.data[i].developer,
+        v.data[i].neighborhood,
+        v.data[i].type,
+        v.data[i].year,
+        convert_bin(v.data[i].has_lift),
+        convert_bin(v.data[i].has_trash),
+        v.data[i].apartaments_count,
+        v.data[i].floors_count,
+        v.data[i].avg_area
+        );
+    }
+}
+
+void console_input(vector* v){
+    int qty;
+    printf("Enter the number of buildings to fill: ");
+    scanf("%d", &qty);
+    printf("Enter building details:\n(format: developer,neighborhood,type,year,lift,trash,apartments,floors,avg_area)\n");
+    while (getchar() != '\n');
+    for (int i = 0; i < qty; i++){
+        building b;
+        char* line = NULL;
+        size_t len = 0;
+        getline(&line, &len, stdin);
+        char* token = strtok(line, ",");
+        b.developer = strdup(token);
+        token = strtok(NULL, ",");
+        b.neighborhood = strdup(token);
+        token = strtok(NULL, ",");
+        b.type = strdup(token);
+        token = strtok(NULL, ",");
+        b.year = atoi(token);
+        token = strtok(NULL, ",");
+        b.has_lift = atoi(token);
+        token = strtok(NULL, ",");
+        b.has_trash = atoi(token);
+        token = strtok(NULL, ",");
+        b.apartaments_count = atoi(token);
+        token = strtok(NULL, ",");
+        b.floors_count = atoi(token);
+        token = strtok(NULL, ",");
+        b.avg_area = atof(token);
+        add_element(v, b);
+        free(line);
+    }
+    printf("\n");
+}
+
+void save_to_file(const char* filename, vector v){
+    FILE* file = fopen(filename, "w");
+    fprintf(file, "Developer,Neighborhood,Type,Year,Lift,Trash,Apartments,Floors,Avg_area\n" );
+
+    for (int i = 0; i < v.size; i++) {
+        fprintf(file, "%s,%s,%s,%d,%s,%s,%d,%d,%.2f\n", 
+        v.data[i].developer,
+        v.data[i].neighborhood,
+        v.data[i].type,
+        v.data[i].year,
+        convert_bin(v.data[i].has_lift),
+        convert_bin(v.data[i].has_trash),
+        v.data[i].apartaments_count,
+        v.data[i].floors_count,
+        v.data[i].avg_area
+        );
+    }
+
+    fclose(file);
+    printf("Данные успешно сохранены в файл %s\n", filename);
 }
 
 int main(){
@@ -189,14 +250,16 @@ int main(){
         building b;
         generate_building(&b);
         add_element(&v, b);
-        print_building(v.data[i]); 
     }
+    
+    print_building(v);
 
     buble_sort(&v, -1); //-1 по возрастанию, 1 наоборот
     printf("\n");
 
-    for (int i =0; i < 10; i++){
-        print_building(v.data[i]);
-    }
+
+    print_building(v);
+
+    save_to_file("buildings.txt", v);
     return 0;
 }
