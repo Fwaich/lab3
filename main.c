@@ -143,7 +143,7 @@ float rand_float(float bot, float top) {
     return bot + (float)rand() / RAND_MAX * (top - bot + 1);
 }
 
-char* rand_string(const char* arr[], int len) { //важно после arr чтоб было []
+char* rand_string(const char* arr[], int len) {
     int i = rand_int(0, len - 1);
     return strdup(arr[i]);
 }
@@ -160,7 +160,15 @@ void generate_building(building* b) {
     b->avg_area = rand_float(20, 50);
 }
 
-char* convert_bin(short h) {
+void fill_vector(vector* v, int r){
+    for (int i = 0; i < r; i++){
+        building b;
+        generate_building(&b);
+        add_element(v, b);
+    }
+}
+
+const char* convert_bin(short h) {
     if (h == 1) {
         return "YES";
     } else {
@@ -169,7 +177,7 @@ char* convert_bin(short h) {
 }
 
 void print_building(vector v) {
-    printf("Developer,Neighborhood,Type,Year,Lift,Trash,Apartments,Floors,Avg_area\n");
+    printf("Developer,Neighborhood,Type,Year,Lift,Trash,Apartments,Floors,Avg_area\n\n");
     for (int i = 0; i < v.size; i++){
         printf("%s, %s, %s, %d, %s, %s, %d, %d, %.2f\n", 
         v.data[i].developer,
@@ -185,6 +193,30 @@ void print_building(vector v) {
     }
 }
 
+void parse_building(char* line, building* b){
+    void* fields[] = {
+        &b->developer, &b->neighborhood, &b->type,
+        &b->year, &b->has_lift, &b->has_trash, 
+        &b->apartaments_count, &b->floors_count, 
+        &b->avg_area 
+    };
+    
+    size_t fields_count = sizeof(fields) / sizeof(fields[0]);
+
+    char* token = strtok(line, ",");
+    for (size_t i = 0; i < fields_count; i++){
+        if (i < 3) {
+            *(char* *)fields[i] = strdup(token);
+        } else if (i < 8) {
+            *(int *)fields[i] = atoi(token);
+        } else {
+            *(float *)fields[i] = atof(token);
+        }
+
+        token = strtok(NULL, ",");
+    }
+}
+
 void console_input(vector* v){
     int qty;
     printf("Enter the number of buildings to fill: ");
@@ -196,33 +228,31 @@ void console_input(vector* v){
         char* line = NULL;
         size_t len = 0;
         getline(&line, &len, stdin);
-        char* token = strtok(line, ",");
-        b.developer = strdup(token);
-        token = strtok(NULL, ",");
-        b.neighborhood = strdup(token);
-        token = strtok(NULL, ",");
-        b.type = strdup(token);
-        token = strtok(NULL, ",");
-        b.year = atoi(token);
-        token = strtok(NULL, ",");
-        b.has_lift = atoi(token);
-        token = strtok(NULL, ",");
-        b.has_trash = atoi(token);
-        token = strtok(NULL, ",");
-        b.apartaments_count = atoi(token);
-        token = strtok(NULL, ",");
-        b.floors_count = atoi(token);
-        token = strtok(NULL, ",");
-        b.avg_area = atof(token);
+        parse_building(line, &b);
         add_element(v, b);
         free(line);
     }
     printf("\n");
 }
 
-void save_to_file(const char* filename, vector v){
-    FILE* file = fopen(filename, "w");
-    fprintf(file, "Developer,Neighborhood,Type,Year,Lift,Trash,Apartments,Floors,Avg_area\n" );
+void take_from_file(char* file_name, vector* v){
+    FILE* file = fopen(file_name, "r");
+    char* line = NULL;
+    size_t len = 0;
+    while (getline(&line, &len, file) != -1) {
+        building b;
+        printf("%s\n", line);
+        parse_building(line, &b);
+        add_element(v, b);
+    }
+    free(line);
+    fclose(file);
+    printf("Data was succesfully taken from %s\n", file_name);
+}
+
+void save_to_file(char* file_name, vector v){
+    FILE* file = fopen(file_name, "w");
+    fprintf(file, "Developer,Neighborhood,Type,Year,Lift,Trash,Apartments,Floors,Avg_area\n\n" );
 
     for (int i = 0; i < v.size; i++) {
         fprintf(file, "%s,%s,%s,%d,%s,%s,%d,%d,%.2f\n", 
@@ -239,27 +269,80 @@ void save_to_file(const char* filename, vector v){
     }
 
     fclose(file);
-    printf("Данные успешно сохранены в файл %s\n", filename);
+    printf("Data was succesfully saved in %s\n", file_name);
 }
 
-int main(){
-    srand(time(NULL));
-    vector v;
-    init_vector(&v);
-    for (int i = 0; i < 10; i++){
-        building b;
-        generate_building(&b);
-        add_element(&v, b);
+int cmp_argv(char* actual_arg, const char* arg_full, const char* arg_short){
+    if (strcmp(actual_arg, arg_full) == 0 || strcmp(actual_arg, arg_short) == 0){
+        return 1;
+    } else {
+        return 0;
     }
-    
-    print_building(v);
+}
 
-    buble_sort(&v, -1); //-1 по возрастанию, 1 наоборот
-    printf("\n");
+char* get_flag_value(char* actual_argv, const char* pref){
+    if (strncmp(actual_argv, pref, strlen(pref)) == 0) {  // strncmp проверит равен ли кусок аргумента до len(pref) префиксу
+        return actual_argv + strlen(pref); // вернем то что после префикса
+    } else {
+        return NULL;
+    }
+}
 
+int main(int argc, char* argv[]){
 
-    print_building(v);
+    if (argc <= 1) {
+        printf("No arguments\n");
+        return 0;
+    }
+    int i = 1;
+    vector vec;
+    while (i < argc) {
 
-    save_to_file("buildings.txt", v);
+        char* file_name = get_flag_value(argv[i], "--in=");
+        if (file_name) {
+            init_vector(&vec);
+            take_from_file(file_name, &vec);
+            i++;
+            continue;
+        }
+
+        if (cmp_argv(argv[i], "--generate", "-g")) {
+            if (i + 1 >= argc) {
+                printf("Missing number of rows after %s\n", argv[i]);
+                return 1;
+            }
+            int rows = atoi(argv[i + 1]);
+            if (rows > 0) {
+                init_vector(&vec);
+                srand(time(NULL));
+                fill_vector(&vec, rows);
+                i += 2;
+                print_building(vec);
+                continue;
+            } else {
+                printf("Invalid number of rows\n");
+                return 1;
+            }
+        }
+
+        if (cmp_argv(argv[i], "--sort", "-s")) {
+            buble_sort(&vec, 1);
+            i++;
+            continue;
+        }
+
+        file_name = get_flag_value(argv[i], "--out=");
+        if (file_name){
+            save_to_file(file_name, vec);
+            i++;
+            continue;
+        }
+
+        printf("Unknown argument %s\n", argv[i]);
+
+    }   
+        print_building(vec);
+        clear_vector(&vec);
+
     return 0;
 }
