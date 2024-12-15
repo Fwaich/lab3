@@ -77,43 +77,43 @@ int compare_string(char* st1, char* st2) {
     }
 }
 
-int cmp(vector* v, int ind1, int ind2){
+int cmp(building* b1, building* b2){
     int n = 0;
-    n = compare_string(v->data[ind1].developer, v->data[ind2].developer);
+    n = compare_string(b1->developer, b2->developer);
     if (n != 0) {
         return n;
     }
-    n = compare_string(v->data[ind1].neighborhood, v->data[ind2].neighborhood);
+    n = compare_string(b1->neighborhood, b2->neighborhood);
     if (n != 0) {
         return n;
     }
-    n = compare_string(v->data[ind1].type, v->data[ind1].type);
+    n = compare_string(b1->type, b2->type);
     if (n != 0) {
         return n;
     }
-    if (v->data[ind1].year > v->data[ind2].year){
+    if (b1->year > b2->year){
         n = 1;
-    } else if (v->data[ind1].year < v->data[ind2].year) {
+    } else if (b1->year < b2->year) {
         n = -1;
-    } else  if (v->data[ind1].has_lift > v->data[ind2].has_lift){
+    } else  if (b1->has_lift > b2->has_lift){
         n = 1;
-    } else if (v->data[ind1].has_lift < v->data[ind2].has_lift) {
+    } else if (b1->has_lift < b2->has_lift) {
         n = -1;
-    } else if (v->data[ind1].has_trash > v->data[ind2].has_trash){
+    } else if (b1->has_trash > b2->has_trash){
         n = 1;
-    } else if (v->data[ind1].has_trash < v->data[ind2].has_trash) {
+    } else if (b1->has_trash < b2->has_trash) {
         n = -1;
-    } else if (v->data[ind1].apartaments_count > v->data[ind2].apartaments_count){
+    } else if (b1->apartaments_count > b2->apartaments_count){
         n = 1;
-    } else if (v->data[ind1].apartaments_count < v->data[ind2].apartaments_count) {
+    } else if (b1->apartaments_count < b2->apartaments_count) {
         n = -1;
-    } else if (v->data[ind1].floors_count > v->data[ind2].floors_count){
+    } else if (b1->floors_count > b2->floors_count){
         n = 1;
-    } else if (v->data[ind1].floors_count < v->data[ind2].floors_count) {
+    } else if (b1->floors_count < b2->floors_count) {
         n = -1;
-    } else if (v->data[ind1].avg_area > v->data[ind2].avg_area){
+    } else if (b1->avg_area > b2->avg_area){
         n = 1;
-    } else if (v->data[ind1].avg_area < v->data[ind2].avg_area) {
+    } else if (b1->avg_area < b2->avg_area) {
         n = -1;
     }
     return n;
@@ -125,14 +125,15 @@ void swap_elements(vector* v, int ind1, int ind2) {
     v->data[ind2] = tmp;
 }
 
-void buble_sort(vector* v, int s) {
+void buble_sort(vector* v,int (*comp)(building* b1, building* b2), int s) {
     for (int i = 0; i < v->size - 1; i++){
-        for (int j = 0; j < v->size - i - 1; j++) {       // возможно стоит i - 2 делать
-            if (cmp(v, j, j + 1) == s) {
+        for (int j = 0; j < v->size - i - 1; j++) {
+            if (comp(&v->data[j], &v->data[j + 1]) == s) {
                 swap_elements(v, j, j + 1);
             }
         }
     }
+    printf("Data was succesfully sorted\n");
 }
 
 int rand_int(int bot, int top) {
@@ -149,9 +150,9 @@ char* rand_string(const char* arr[], int len) {
 }
 
 void generate_building(building* b) {
-    b->developer = rand_string(developers, 3);
-    b->neighborhood = rand_string(neighborhoods, 3);
-    b->type = rand_string(types, 3);
+    b->developer = rand_string(developers, 5);
+    b->neighborhood = rand_string(neighborhoods, 5);
+    b->type = rand_string(types, 5);
     b->year = rand_int(1900, 2024);
     b->has_lift = rand_int(0, 1);
     b->has_trash = rand_int(0, 1);
@@ -296,13 +297,34 @@ int main(int argc, char* argv[]){
     }
     int i = 1;
     vector vec;
+    char* file_name = NULL;
+    int out = 0;
+
+    if (!(cmp_argv(argv[1], "--in=", "-i") || cmp_argv(argv[1],"--generate", "-g"))){
+        printf("You didn't set input or generate flags. Enter data manully\n");
+        init_vector(&vec);
+        console_input(&vec);
+    }
+
     while (i < argc) {
 
-        char* file_name = get_flag_value(argv[i], "--in=");
+        file_name = get_flag_value(argv[i], "--in=");
         if (file_name) {
             init_vector(&vec);
             take_from_file(file_name, &vec);
             i++;
+            continue;
+        }
+
+        if (cmp_argv(argv[i], "", "-i")) {
+            if (i + 1 >= argc){
+                printf("Missing output file after %s\n", argv[i]);
+                return 1;
+            }
+            file_name = argv[i + 1];
+            init_vector(&vec);
+            take_from_file(file_name, &vec);
+            i += 2;
             continue;
         }
 
@@ -318,6 +340,7 @@ int main(int argc, char* argv[]){
                 fill_vector(&vec, rows);
                 i += 2;
                 print_building(vec);
+                printf("Data was successfully generated\n");
                 continue;
             } else {
                 printf("Invalid number of rows\n");
@@ -325,8 +348,30 @@ int main(int argc, char* argv[]){
             }
         }
 
+        // printf("%d\n %s\n", i, argv[i]);
         if (cmp_argv(argv[i], "--sort", "-s")) {
-            buble_sort(&vec, 1);
+            int type = -1;
+            if (i + 1 < argc){
+                char* sort_type = get_flag_value(argv[i + 1], "--type=");
+                if (sort_type && cmp_argv(sort_type, "asc", "")){
+                    i++;
+                }
+                
+                if (sort_type && cmp_argv(sort_type, "desc", "")) {
+                    type = 1;
+                    i++;
+                }
+                printf("*%s* %d %s\n", sort_type, type, argv[i]);
+
+                if (i + 2 < argc && cmp_argv(argv[i + 1], "", "-t")) {
+                    if (cmp_argv(argv[i + 2], "", "D")) {
+                        type = 1;
+                    }
+
+                    i += 2;
+                }
+            }
+            buble_sort(&vec, cmp, type);
             i++;
             continue;
         }
@@ -334,14 +379,31 @@ int main(int argc, char* argv[]){
         file_name = get_flag_value(argv[i], "--out=");
         if (file_name){
             save_to_file(file_name, vec);
+            out = 1;
             i++;
             continue;
         }
 
-        printf("Unknown argument %s\n", argv[i]);
+        if (cmp_argv(argv[i], "", "-o")) {
+            if (i + 1 >= argc){
+                printf("Missing input file after %s\n", argv[i]);
+                return 1;
+            }
+            file_name = argv[i + 1];
+            save_to_file(file_name, vec);
+            out = 1;
+            i += 2;
+            continue;
+        }
 
-    }   
-        print_building(vec);
+        printf("Unknown argument %s\n", argv[i]);
+        i++;
+
+    }  
+        if (out == 0) {
+            printf("You didn't set out flags.Program will print data here:\n");
+            print_building(vec);
+        } 
         clear_vector(&vec);
 
     return 0;
