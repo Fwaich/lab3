@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "../src_h/vector.h"
+#include "vector.h"
 
 void init_vector(vector* v) {
     v->size = 0;

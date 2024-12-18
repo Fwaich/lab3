@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "../src_h/building.h"
-#include "../src_h/vector.h"
-#include "../src_h/sort.h"
-#include "../src_h/args.h"
-#include "../src_h/io.h"
+#include "building.h"
+#include "vector.h"
+#include "sort.h"
+#include "args.h"
+#include "io.h"
 
 int main(int argc, char* argv[]){
 
@@ -57,7 +57,6 @@ int main(int argc, char* argv[]){
                 srand(time(NULL));
                 fill_vector(&vec, rows);
                 i += 2;
-                print_building(vec);
                 printf("Data was successfully generated\n");
                 continue;
             } else {

@@ -1,5 +1,5 @@
 #include <string.h>
-#include "../src_h/args.h"
+#include "args.h"
 
 int cmp_argv(char* actual_arg, const char* arg_full, const char* arg_short){
     if (strcmp(actual_arg, arg_full) == 0 || strcmp(actual_arg, arg_short) == 0){

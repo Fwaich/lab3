@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../src_h/vector.h"
+#include "vector.h"
 
 void print_building(vector v);
 

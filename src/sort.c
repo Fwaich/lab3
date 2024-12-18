@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <ctype.h>
-#include "../src_h/sort.h"
+#include "sort.h"
 
 void buble_sort(vector* v,int (*comp)(building* b1, building* b2), int s) {
     for (int i = 0; i < v->size - 1; i++){

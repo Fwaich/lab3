@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "../src_h/vector.h"
-#include "../src_h/io.h"
+#include "vector.h"
+#include "io.h"
 
 void print_building(vector v) {
     printf("Developer,Neighborhood,Type,Year,Lift,Trash,Apartments,Floors,Avg_area\n\n");
@@ -40,11 +40,14 @@ void console_input(vector* v){
 
 void take_from_file(char* file_name, vector* v){
     FILE* file = fopen(file_name, "r");
+    if (!file) {
+        printf("Program can't open input file\n");
+        return;
+    }
     char* line = NULL;
     size_t len = 0;
     while (getline(&line, &len, file) != -1) {
         building b;
-        printf("%s\n", line);
         parse_building(line, &b);
         add_element(v, b);
     }
@@ -55,8 +58,6 @@ void take_from_file(char* file_name, vector* v){
 
 void save_to_file(char* file_name, vector v){
     FILE* file = fopen(file_name, "w");
-    fprintf(file, "Developer,Neighborhood,Type,Year,Lift,Trash,Apartments,Floors,Avg_area\n\n" );
-
     for (int i = 0; i < v.size; i++) {
         fprintf(file, "%s,%s,%s,%d,%s,%s,%d,%d,%.2f\n", 
         v.data[i].developer,

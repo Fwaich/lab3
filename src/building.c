@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../src_h/building.h"
+#include "building.h"
 
 const char* developers[] = {"Skyline", "Horizon", "Pinnacle", "Nova", "Evergreen"};
 const char* neighborhoods[] = {"Maplewood", "Cedar", "Bluewater", "Golden", "Silverstone"};
@@ -54,9 +54,21 @@ void parse_building(char* line, building* b) {
     for (size_t i = 0; i < fields_count; i++){
         if (i < 3){
             *(char* *)fields[i] = strdup(token);
-        } else if (i < 8){
+        } else if (i < 4){
             *(int *)fields[i] = atoi(token);
-        } else{
+        } else if (i < 6) {
+
+            if (strcmp("YES", token)) {
+                *(int *)fields[i] = 1;
+            } else if (strcmp("NO", token)){
+                *(int *)fields[i] = 0;
+            } else {
+                *(int *)fields[i] = atoi(token);
+            }
+
+        }else if (i < 8){
+            *(int *)fields[i] = atoi(token);
+        }else {
             *(float *)fields[i] = atof(token);
         }
 
